@@ -17,7 +17,7 @@ clients:
       # Generic: Payments
       - pathPattern: "/api/v1/payments/**"
         policy:
-          limit: 5
+          limit: -5
           window: "PT1H"
           algorithmKey: "TOKEN_BUCKET"
           identityStrategy: "API_KEY"

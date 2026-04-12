@@ -46,11 +46,8 @@ public class YAMLRuleProvider implements RuleProvider{
                     .map(this::safeConvertRule)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
-            String ruleSummary = rules.stream()
-                    .map(rule -> String.format("\n -> %s [Priority: %d]", rule.getPathPattern(), rule.getPriority()))
-                    .collect(Collectors.joining());
 
-            log.info("Successfully loaded {} rules:{}", rules.size(), ruleSummary);
+            log.info("Successfully loaded {} rules", rules.size());
 
             return rules;
         }
