@@ -1,4 +1,4 @@
-package com.ratelimiter.ratelimitalgorithm;
+package com.ratelimiter.algorithm;
 
 import com.ratelimiter.ConstEnum;
 import com.ratelimiter.model.RateLimitPolicy;

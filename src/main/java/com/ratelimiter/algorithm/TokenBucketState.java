@@ -1,4 +1,4 @@
-package com.ratelimiter.ratelimitalgorithm;
+package com.ratelimiter.algorithm;
 
 public record TokenBucketState(
         double tokenCount,
