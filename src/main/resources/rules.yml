@@ -12,15 +12,15 @@ clients:
           limit: 3
           window: "PT1M"
           algorithmKey: "TOKEN_BUCKET"
-          identityStrategy: "API_KEY"
+          identityStrategy: "AUTH_TOKEN"
 
       # Generic: Payments
       - pathPattern: "/api/v1/payments/**"
         policy:
-          limit: -5
+          limit: 5
           window: "PT1H"
-          algorithmKey: "TOKEN_BUCKET"
-          identityStrategy: "API_KEY"
+          algorithmKey: "TOKEN_BUCKET_MALFORMED"
+          identityStrategy: "AUTH_TOKEN"
 
       # Global Catch-all
       - pathPattern: "/**"
@@ -29,4 +29,4 @@ clients:
           limit: 100
           window: "PT1M"
           algorithmKey: "TOKEN_BUCKET"
-          identityStrategy: "API_KEY"
+          identityStrategy: "AUTH_TOKEN"

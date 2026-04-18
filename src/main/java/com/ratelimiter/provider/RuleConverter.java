@@ -1,7 +1,9 @@
 package com.ratelimiter.provider;
 
+import com.ratelimiter.exceptions.InvalidPolicyException;
 import com.ratelimiter.model.AbstractRule;
 import com.ratelimiter.model.RateLimitPolicy;
+import com.ratelimiter.model.RateLimitSpecs;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -14,11 +16,15 @@ import java.time.Duration;
 public class RuleConverter {
     private final RuleFactory ruleFactory;
     public AbstractRule convertAndValidateRule(RuleDTO ruleDTO) {
-        RateLimitPolicy policy = buildPolicy(ruleDTO);
-        int priority = calculateEffectivePriority(ruleDTO);
+        try {
+            RateLimitPolicy policy = buildPolicy(ruleDTO);
+            int priority = calculateEffectivePriority(ruleDTO);
 
-        return ruleFactory.createRule(ruleDTO.getPathPattern(), priority,policy);
-
+            return ruleFactory.createRule(ruleDTO.getPathPattern(), priority, policy);
+        }
+        catch (Exception e) {
+            throw new InvalidPolicyException(e.getMessage(), e);
+        }
     }
     private RateLimitPolicy buildPolicy(RuleDTO ruleDTO) {
         PolicyDTO policy = ruleDTO.getPolicy();
@@ -27,12 +33,14 @@ public class RuleConverter {
         }
         Duration window = Duration.parse(policy.getWindow());
 
+        RateLimitSpecs.Algorithm algorithm = RateLimitSpecs.Algorithm.valueOf(policy.getAlgorithmKey());
+        RateLimitSpecs.Identity identity = RateLimitSpecs.Identity.valueOf(policy.getIdentityStrategy());
         //Add validation for Algorithm key and identity strategy also
         return new RateLimitPolicy(
                 policy.getLimit(),
                 window,
-                policy.getAlgorithmKey(),
-                policy.getIdentityStrategy()
+                algorithm,
+                identity
         );
     }
 
@@ -43,7 +51,6 @@ public class RuleConverter {
             }
             catch (NumberFormatException e){
                 log.warn("Invalid priority provided for policy : {}", ruleDTO.getPathPattern());
-
             }
 
         }
