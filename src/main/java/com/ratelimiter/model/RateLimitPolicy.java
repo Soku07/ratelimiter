@@ -5,7 +5,7 @@ import java.time.Duration;
 public record RateLimitPolicy(
         int limit,
         Duration window,
-        String algorithmKey,
-        String identityStrategy
+        RateLimitSpecs.Algorithm algorithm,
+        RateLimitSpecs.Identity identityStrategy
 ) {
 }
