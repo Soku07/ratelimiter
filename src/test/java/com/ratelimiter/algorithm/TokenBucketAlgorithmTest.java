@@ -2,6 +2,7 @@ package com.ratelimiter.algorithm;
 
 import com.ratelimiter.exceptions.StorageException;
 import com.ratelimiter.model.RateLimitPolicy;
+import com.ratelimiter.model.RateLimitSpecs;
 import com.ratelimiter.storageprovider.StorageProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,7 @@ public class TokenBucketAlgorithmTest {
     private static final String ADMIN_KEY = "adminKey";
 
 
-    private static final RateLimitPolicy STANDARD_POLICY = new RateLimitPolicy(10, Duration.ofMinutes(1),"TOKEN_BUCKET","API_KEY");
+    private static final RateLimitPolicy STANDARD_POLICY = new RateLimitPolicy(10, Duration.ofMinutes(1), RateLimitSpecs.Algorithm.TOKEN_BUCKET, RateLimitSpecs.Identity.IP_ADDRESS);
 
     private TokenBucketAlgorithm tokenBucketAlgorithm;
     private StorageProvider  mockStorage;
