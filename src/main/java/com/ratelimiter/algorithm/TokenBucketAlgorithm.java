@@ -2,6 +2,7 @@ package com.ratelimiter.algorithm;
 
 import com.ratelimiter.ConstEnum;
 import com.ratelimiter.model.RateLimitPolicy;
+import com.ratelimiter.model.RateLimitSpecs;
 import com.ratelimiter.storageprovider.StorageProvider;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +24,11 @@ public class TokenBucketAlgorithm implements RateLimitAlgorithm{
             );
 
         return tokenBucketState.isAllowed();
+    }
+
+    @Override
+    public RateLimitSpecs.Algorithm getAlgorithmType() {
+        return RateLimitSpecs.Algorithm.TOKEN_BUCKET;
     }
 
     //This method is doing the real calculations. If this method is private, writing unit tests would become hard.
