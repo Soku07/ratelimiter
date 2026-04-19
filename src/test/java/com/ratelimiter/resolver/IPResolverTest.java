@@ -1,5 +1,6 @@
 package com.ratelimiter.resolver;
 
+import com.ratelimiter.model.RateLimitSpecs;
 import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,6 +67,11 @@ public class IPResolverTest {
         when(request.getRemoteAddr()).thenReturn(ip);
         Optional<String> result = ipResolver.resolve(request);
         assertEquals(Optional.empty(),result);
+    }
+
+    @Test
+    void shouldReturnCorrectType(){
+        assertEquals(RateLimitSpecs.Identity.IP_ADDRESS, ipResolver.getIdentityType());
     }
 
 
