@@ -1,0 +1,37 @@
+src/main/java/com/ratelimiter
+├── aspect                          # Cross-cutting concerns
+│   └── InfrastructureAspect.java   # AOP for Storage/RuleProvider exceptions
+├── config                          # Spring Configuration
+│   ├── AppConfig.java              # Bean definitions for Maps (Algorithms/Resolvers)
+│   └── StorageConfig.java          # Caffeine/Redis setup
+├── controller                      # Entry points
+│   └── RateLimitTestController.java
+├── exception                       # Error Handling
+│   ├── AppError.java               # The internal/external mapping Enum
+│   ├── BaseException.java          # Custom RuntimeException
+│   ├── GlobalExceptionHandler.java # @RestControllerAdvice
+│   └── UserCategory.java           # Shared user-facing error codes
+├── executor                        # The "Brain"
+│   ├── RateLimitExecutor.java      # Orchestrator
+│   └── RateLimitResult.java        # Response Model
+├── identity                        # The "Who" (Resolvers)
+│   ├── IdentityResolver.java       # Interface
+│   ├── IpResolver.java
+│   └── ClientUserCompositeResolver.java
+├── logic                           # The "How" (Algorithms)
+│   ├── RateLimitAlgorithm.java     # Interface
+│   ├── FixedWindowAlgorithm.java
+│   └── TokenBucketAlgorithm.java
+├── model                           # Domain Objects
+│   ├── AbstractRule.java           # Abstract model
+│   ├── AntPathRule.java            # Path-matching implementation
+│   └── RateLimitPolicy.java        # Rule data (record)
+├── provider                        # The "What" (Adaptive Rules)
+│   ├── PolicyRegistry.java         # Management & Hot-swapping
+│   ├── RuleProvider.java           # Interface for sourcing
+│   ├── YamlRuleProvider.java       # YAML implementation
+│   ├── RuleStore.java              # Interface for matching
+│   └── OrderedListRuleStore.java   # List-based implementation
+└── storage                         # The "Where" (Persistence)
+    ├── StorageProvider.java        # Interface
+    └── CaffeineStorageProvider.java
