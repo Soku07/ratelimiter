@@ -73,6 +73,7 @@ public class RestAPIOrchestrator implements RateLimitOrchestrator {
     //Code improvised with Modern Java syntax
     @Override
     public boolean isAllowed(String resourcePath, Object requestSource) {
+        if(!rateLimiterSettings.isEnabled()) return true;
         HttpServletRequest request = (HttpServletRequest) requestSource;
         return policyRegistry.getBestMatch(resourcePath)
                 .map(rule -> processRule(request,rule) )
