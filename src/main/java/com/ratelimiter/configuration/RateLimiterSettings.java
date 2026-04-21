@@ -12,7 +12,8 @@ public class RateLimiterSettings {
     //if the enabled is non volatile a change in setting is not guaranteed to apply
     //Removing volatile now because the api to change this settings is not exposed yet
     private  boolean enabled = true;
-    private  boolean bypassOnException = false;
+    private boolean allowRequestOnMatchingRuleNotFound = true;
+    private  boolean byPassOnException = false;
     private double burstFactor = ConstEnum.BURST_FACTOR;
 
 }
