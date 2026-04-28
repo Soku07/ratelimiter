@@ -1,10 +1,10 @@
 package com.ratelimiter.algorithm;
 
-public record TokenBucketState(
+public record TokenBucketState (
         double tokenCount,
         long lastRefillTimeStamp,
         boolean isAllowed
 
-) {
+) implements RateLimitDecision {
 
 }
