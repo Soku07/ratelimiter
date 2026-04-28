@@ -1,18 +1,23 @@
 package com.ratelimiter.configuration;
 
+import com.ratelimiter.model.RateLimitSpecs;
 import io.lettuce.core.api.StatefulConnection;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
@@ -48,5 +53,25 @@ public class RedisConfig {
         template.setHashValueSerializer(stringSerializer);
 
         return template;
+    }
+
+    @Bean
+    public RedisScript<Long> tokenBucketAlgorithmScript(){
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setLocation(new ClassPathResource("luascripts/tokenbucketalgorithm.lua"));
+        script.setResultType(Long.class);
+        return script;
+    }
+
+    @Bean
+    public Map<RateLimitSpecs.Algorithm, RedisScript<Long>> algorithmScripts(
+            RedisScript<Long> tokenBucketScript
+           ) {
+
+        Map<RateLimitSpecs.Algorithm, RedisScript<Long>> scriptMap = new HashMap<>();
+
+        scriptMap.put(RateLimitSpecs.Algorithm.TOKEN_BUCKET, tokenBucketScript);
+
+        return scriptMap;
     }
 }
