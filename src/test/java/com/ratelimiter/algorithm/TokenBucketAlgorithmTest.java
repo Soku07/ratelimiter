@@ -74,7 +74,7 @@ public class TokenBucketAlgorithmTest {
     private void mockStorageExecution(TokenBucketState stateToMock){
         when(mockStorage.atomicCompute(anyString(),any(),any(),any(BiFunction.class),any()))
                 .thenAnswer(invocation -> {
-                    BiFunction<String, TokenBucketState,TokenBucketState> logicPassedAsFunction = invocation.getArgument(1);
+                    BiFunction<String, TokenBucketState,TokenBucketState> logicPassedAsFunction = invocation.getArgument(3);
                     return  logicPassedAsFunction.apply(invocation.getArgument(0),stateToMock);
                 });
     }
