@@ -7,11 +7,19 @@ clients:
     rules:
       # Specific: Payments
       - pathPattern: "/api/v1/payments/execute"
-        priority: 1
+        priority: 100
+        policy:
+          limit: 1
+          window: "PT10S"
+          algorithmKey: "TOKEN_BUCKET"
+          identityStrategy: "AUTH_TOKEN"
+
+      - pathPattern: "/api/v1/payments/pay"
+        priority: 100
         policy:
           limit: 3
-          window: "PT1M"
-          algorithmKey: "TOKEN_BUCKET"
+          window: "PT10S"
+          algorithmKey: "PROBABILISTIC_SLIDING_WINDOW"
           identityStrategy: "AUTH_TOKEN"
 
       # Generic: Payments

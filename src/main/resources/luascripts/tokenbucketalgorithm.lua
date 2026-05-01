@@ -7,7 +7,8 @@ local ttl = tonumber(ARGV[5])
 
 local raw_data = redis.call('GET', key)
 local tokenCount, lastRefill
-
+local t = redis.call('TIME')
+now = (tonumber(t[1]) * 1000) + math.floor(tonumber(t[2]) / 1000)
 -- 1. Initialize or Load State
 if not raw_data then
     tokenCount = capacity
@@ -32,6 +33,6 @@ local newState = {
     lastRefillTimeStamp = lastRefill
 }
 redis.call('SET', key, cjson.encode(newState))
-redis.call('EXPIRE', key, ttl)
+redis.call('PEXPIRE', key, ttl)
 
 return allowed

@@ -31,10 +31,10 @@ public class RedisStorageProvider implements StorageProvider{
         try {
             Object[] redisArgs = new Object[]{
                     String.valueOf(context.capacity()),     // ARGV[1]
-                    String.valueOf(context.currentTime()),          // ARGV[2]
+                    String.valueOf(context.currentTimeMilliSeconds()),          // ARGV[2]
                     String.valueOf(context.windowMillis()), // ARGV[3]
                     String.valueOf(context.limit()),        // ARGV[4]
-                    String.valueOf(context.ttlSeconds())    // ARGV[5]
+                    String.valueOf(context.ttlMilliSeconds())    // ARGV[5]
             };
             Long result = redisTemplate.execute(algorithmRedisScriptMap.get(algorithm), Collections.singletonList(key), redisArgs);
             return (T) new RedisDecision(result != null && result == 1);
