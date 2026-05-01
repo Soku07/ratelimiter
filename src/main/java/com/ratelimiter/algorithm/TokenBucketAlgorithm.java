@@ -1,6 +1,7 @@
 package com.ratelimiter.algorithm;
 
 import com.ratelimiter.ConstEnum;
+import com.ratelimiter.model.RateLimitContext;
 import com.ratelimiter.model.RateLimitPolicy;
 import com.ratelimiter.model.RateLimitSpecs;
 import com.ratelimiter.storageprovider.StorageProvider;
@@ -18,12 +19,19 @@ public class TokenBucketAlgorithm implements RateLimitAlgorithm{
     @Override
     public boolean isAllowed(String key, RateLimitPolicy policy) {
         //Orchestrator has to catch the exception thrown by any algorithm and apply bypass settings
-            TokenBucketState tokenBucketState = storageProvider.atomicCompute(key,
-                    (k, currentState) -> applyTokenBucketAlgorithm(k,currentState, policy),
+        //No try catch block needed here
+        RateLimitContext rateLimitContext = new RateLimitContext((1 + ConstEnum.BURST_FACTOR) * policy.limit(),
+                System.currentTimeMillis(),
+                policy.window().toMillis(),
+                policy.limit(),
+                policy.window().toMillis() * 2
+                );
+            RateLimitDecision rateLimitDecision = storageProvider.atomicCompute(key, RateLimitSpecs.Algorithm.TOKEN_BUCKET,rateLimitContext,
+                    (k, currentState) -> applyTokenBucketAlgorithm(k,(TokenBucketState) currentState, policy),
                     policy.window()
             );
 
-        return tokenBucketState.isAllowed();
+        return rateLimitDecision.isAllowed();
     }
 
     @Override
