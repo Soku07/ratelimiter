@@ -64,13 +64,23 @@ public class RedisConfig {
     }
 
     @Bean
+    public RedisScript<Long> probabilisticSlidingWindowScript(){
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setLocation(new ClassPathResource("luascripts/ProbablisticSlidingWindowAlgorithm.lua"));
+        script.setResultType(Long.class);
+        return script;
+    }
+
+    @Bean
     public Map<RateLimitSpecs.Algorithm, RedisScript<Long>> algorithmScripts(
-            RedisScript<Long> tokenBucketScript
+            RedisScript<Long> tokenBucketAlgorithmScript,
+            RedisScript<Long> probabilisticSlidingWindowScript
            ) {
 
         Map<RateLimitSpecs.Algorithm, RedisScript<Long>> scriptMap = new HashMap<>();
 
-        scriptMap.put(RateLimitSpecs.Algorithm.TOKEN_BUCKET, tokenBucketScript);
+        scriptMap.put(RateLimitSpecs.Algorithm.TOKEN_BUCKET, tokenBucketAlgorithmScript);
+        scriptMap.put(RateLimitSpecs.Algorithm.PROBABILISTIC_SLIDING_WINDOW, probabilisticSlidingWindowScript);
 
         return scriptMap;
     }
