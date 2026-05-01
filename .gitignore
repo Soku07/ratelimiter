@@ -34,3 +34,4 @@ build/
 /venv
 /logs
 sandbox/
+**/src/main/resources/application-*.properties
