@@ -9,9 +9,9 @@ A production-grade, thread safe rate limiter built for high concurrency
 ---
 ## Features
 1. Pluggable Strategy Engine: Supports multiple rate-limiting algorithms, including Token Bucket and Probabilistic Sliding Window, adhering to the Strategy Pattern for seamless addition of new logic without modifying core code.
-2. High-Performance Hybrid Storage: Leverages a dual-layer approach with Caffeine (L1) for local in-memory speed and Redis (L2) for distributed consistency.
-3. Guaranteed Thread Safety: Ensures strict atomicity through Lua scripting for Redis operations and Caffeine’s atomic compute functions, preventing race conditions during high-concurrency 10k user load tests.
-4. Storage-Optimized Key Management: Implements a unique Mashed Key Generator that produces fixed 64/67-character hashes, ensuring predictable storage overhead in Redis regardless of the URI path or identifier length.
+2. High-Performance Hybrid Storage: Leverages Caffeine cache for single instance in-memory speed and Redis for distributed consistency.
+3. Guaranteed Thread Safety: Ensures strict atomicity through Lua scripting for Redis operations and Caffeine’s atomic compute functions, preventing race conditions during heavy concurrent load.
+4. Storage-Optimized Key Management: Implements a Hashed Key Generator that produces fixed 64/67-character hashes, ensuring predictable storage overhead in Redis regardless of the URI path or identifier length.
 5. Extensible Policy Management: Features a decoupled Rule Provider interface, allowing the system to ingest rate-limit policies from YAML, Databases, or any custom external data source.
 5. Granular Rule Resolution: Offers the flexibility to assign specific algorithms and limits on a per-rule basis, resolved dynamically via IP Address or Auth Token.
 6. In case of Infrastructure exceptions, rate limiter can be configured to react with by pass settings as set by the admin.
