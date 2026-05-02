@@ -17,13 +17,12 @@ A production-grade, thread safe rate limiter built for high concurrency
 6. In case of Infrastructure exceptions, rate limiter can be configured to react with by pass settings as set by the admin.
 
 ---
-###
-
 ## Architecture
 ![Architecture.png](design/Architecture.png)
 
+---
 
-### Component Overview
+## Component Overview
 **Interceptor** - Intercepts every API requests and calls the Orchestrator to make a decision.
 **RestAPI Orchestrator** — Delegates to three subsystems in sequence: policy lookup, identity extraction, and key generation. The resolved key and policy are then passed to the algorithm to make an allow/deny decision.
 
