@@ -15,7 +15,7 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 @Component
-@Primary
+//@Primary
 public class RedisStorageProvider implements StorageProvider{
     private final RedisTemplate<String,String> redisTemplate;
     private final Map<RateLimitSpecs.Algorithm, RedisScript<Long>> algorithmRedisScriptMap;
