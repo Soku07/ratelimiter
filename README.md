@@ -1,48 +1,118 @@
-Distributed Rate Limiter Architecture
-This project implements a flexible, industry-standard rate limiting system designed to be storage-agnostic. The core logic remains consistent whether the system is running on a single machine or across a distributed cluster.
+# RateLimiter As a Service
 
-The Philosophy
-The system is built on the principle of Separation of Concerns. Most rate limiters fail because database logic is baked directly into the algorithm. This architecture separates the What (the mathematical logic) from the How (the storage mechanism).
+A production-grade, thread safe rate limiter built for high concurrency
 
-Key Components
-The Brain (Algorithms): Contains pure mathematical logic, such as the Token Bucket algorithm. It defines token availability but remains unaware of the data's physical location.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Java](https://img.shields.io/badge/Java-17%2B-blue)](https://adoptium.net/)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.x-brightgreen)](https://spring.io/projects/spring-boot)
 
-The Muscle (Storage Providers): These implementations handle persistence. One version uses Caffeine for high-speed local memory, while the other uses Redis for distributed consistency.
+---
+## Features
+1. Pluggable Strategy Engine: Supports multiple rate-limiting algorithms, including Token Bucket and Probabilistic Sliding Window, adhering to the Strategy Pattern for seamless addition of new logic without modifying core code.
+2. High-Performance Hybrid Storage: Leverages a dual-layer approach with Caffeine (L1) for local in-memory speed and Redis (L2) for distributed consistency.
+3. Guaranteed Thread Safety: Ensures strict atomicity through Lua scripting for Redis operations and Caffeine’s atomic compute functions, preventing race conditions during high-concurrency 10k user load tests.
+4. Storage-Optimized Key Management: Implements a unique Mashed Key Generator that produces fixed 64/67-character hashes, ensuring predictable storage overhead in Redis regardless of the URI path or identifier length.
+5. Extensible Policy Management: Features a decoupled Rule Provider interface, allowing the system to ingest rate-limit policies from YAML, Databases, or any custom external data source.
+5. Granular Rule Resolution: Offers the flexibility to assign specific algorithms and limits on a per-rule basis, resolved dynamically via IP Address or Auth Token.
+6. In case of Infrastructure exceptions, rate limiter can be configured to react with by pass settings as set by the admin.
 
-The Contract (Interfaces): A shared interface called RateLimitDecision acts as a handshake. It ensures that regardless of the storage choice, the result is always consistent and predictable.
+---
+###
 
-Architecture Principles
-1. Strategy Pattern
-A common StorageProvider interface allows for swapping between Redis and Caffeine at runtime without modifying algorithm logic. This makes the system highly testable and resilient to infrastructure changes.
+## Architecture
+![Architecture.png](design/Architecture.png)
 
-2. Atomic Operations
-Rate limiting is highly sensitive to race conditions.
 
-Redis: Lua scripts ensure that checking and updating a limit happens as a single, uninterrupted command.
+### Component Overview
+**Interceptor** - Intercepts every API requests and calls the Orchestrator to make a decision.
+**RestAPI Orchestrator** — Delegates to three subsystems in sequence: policy lookup, identity extraction, and key generation. The resolved key and policy are then passed to the algorithm to make an allow/deny decision.
 
-Caffeine: The compute method locks a specific key during calculation to prevent multiple threads from interfering with one another.
+**Policy Registry** — finds the best matching rule for an incoming request path. Backed by a `RuleStore` (interface), with two implementations provided:
+- `OrderedList RuleStore` — linear scan, suitable for small rule sets
+- `Trie RuleStore` prefix-based lookup, suitable for large rule sets
 
-3. Type-Safe Agnosticism
-Bounded Generics (<T extends RateLimitDecision>) ensure that the Storage Provider returns an object the Algorithm understands. This approach allows the Storage Provider to remain decoupled from the specific class names of the internal state.
+Rules are loaded via a `RuleProvider` (interface). Two implementations are included:
+- `YAML RuleProvider` — loads rules from `application.yml`
+- `Custom RuleProvider` — implement your own rule source
 
-Request Flow
-Request Arrival: A user triggers an endpoint.
+Path matching is handled by `ANT PathRuleMatcher`, supporting wildcard patterns (`/api/**`, `/api/users/*`).
 
-Context Creation: Policy details, such as "10 requests per minute," are gathered into a RateLimitContext.
+**Identity Resolver** — extracts the subject identity from the request to scope the rate limit. Two built-in implementations:
+- `IPAddress Resolver` — limits by client IP address
+- `AuthToken Resolver` — limits by authenticated user token
 
-The Hand-off: The Algorithm requests an atomicCompute operation from the Storage Provider.
+**Key Factory** — generates the storage key in a consistent structure. The `Hashed Key Generator` (SHA-256) produces a deterministic 67-character key in the format `rl:<path><identity>`. This ensures keys are fixed-length regardless of path or identity length, and avoids collisions across endpoints.
 
-Execution:
+**Rate Limit Algorithm** — makes the allow/deny decision. Two implementations provided:
+- `TokenBucket Algo` — allows controlled bursting; tokens refill at a fixed rate
+- `Sliding Window Algo` — enforces a strict request count over a rolling time window
 
-In the Redis path, a Lua script executes and returns a decision.
+Both algorithms delegate to the **Storage Provider** (interface), which abstracts the counter backend:
+- `Caffeine Cache` — in-process cache for single-instance deployments
+- `Redis KV Store` — distributed counter store for multi-instance deployments
 
-In the Caffeine path, Java math logic runs locally and returns the updated state.
+---
 
-Final Verdict: The system receives a RateLimitDecision and either allows the request or blocks it with a 429 Too Many Requests status.
 
-Technical Intricacies
-Custom Exception Mapping: Infrastructure errors are wrapped in a StorageException. This prevents low-level database failures from leaking into the business logic.
+## Extending the Project
 
-Immutable Models: Java Records are utilized for context and decisions, ensuring data cannot be accidentally modified during the request lifecycle.
+Every subsystem is interface-backed. Plug in your own implementation by declaring a Spring bean.
 
-Redis Stack Integration: Compatibility with Redis Stack allows for easy monitoring of keys and performance during high-traffic simulations.
+**Custom rule source:**
+```java
+@Component
+public class DatabaseRuleProvider implements RuleProvider {
+    @Override
+    public List<RateLimitRule> loadRules() {
+        return ruleRepository.findAll(); // load from DB, config service, etc.
+    }
+}
+```
+
+**Custom identity resolver:**
+```java
+@Component
+public class ApiKeyResolver implements IdentityResolver {
+    @Override
+    public String resolve(HttpServletRequest request) {
+        return request.getHeader("X-API-Key");
+    }
+}
+```
+
+**Custom rule store:**
+```java
+@Component
+public class MyRuleStore implements RuleStore {
+    @Override
+    public Optional<RateLimitRule> findBest(String path) {
+        // your matching logic
+    }
+}
+```
+
+---
+
+## Key Design Notes
+
+**SHA-256 key hashing** — the Key Factory hashes `<path><identity>` to a fixed 67-character key. This keeps Redis keys uniform in size, prevents hot-key patterns based on path length, and avoids collisions between endpoints with similar prefixes.
+
+**ANT path matching** — rules support `?` (single character), `*` (path segment), and `**` (any path depth). More specific rules take priority over broader ones. The `Trie RuleStore` is recommended when rule count is large.
+
+**Lua Script and Atomic compute** — To ensure fast , consistent state operations,Lua script is used for redis and atomic compute is used for Caffeine cache
+
+---
+
+## Tech Stack
+
+- Java 17 or 21 (LTS)
+- Spring Boot 3.x 
+- Caffeine — in-process rate limit counters
+- Redis (Lettuce) — distributed rate limit counters
+- SHA-256 (JDK) — key generation
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE) for details.
