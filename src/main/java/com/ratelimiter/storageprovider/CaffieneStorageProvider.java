@@ -12,7 +12,7 @@ import java.time.Duration;
 import java.util.function.BiFunction;
 
 @Component
-//@Primary
+@Primary
 public class CaffieneStorageProvider implements StorageProvider {
     private final Cache<String, Object> cache;
     public CaffieneStorageProvider(Cache<String, Object> cache){
