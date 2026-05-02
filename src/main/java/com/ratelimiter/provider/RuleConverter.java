@@ -32,7 +32,9 @@ public class RuleConverter {
             throw new IllegalArgumentException("Limit must be greater than or equal to 1 for policy : " + ruleDTO.getPathPattern());
         }
         Duration window = Duration.parse(policy.getWindow());
-
+        if(window.isZero() || window.isNegative() || window.toMillis() < 1000 ){
+            throw new IllegalArgumentException("Rate limit window must be at least 1 second for stability.");
+        }
         RateLimitSpecs.Algorithm algorithm = RateLimitSpecs.Algorithm.valueOf(policy.getAlgorithmKey());
         RateLimitSpecs.Identity identity = RateLimitSpecs.Identity.valueOf(policy.getIdentityStrategy());
         //Add validation for Algorithm key and identity strategy also
