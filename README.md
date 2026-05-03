@@ -23,7 +23,8 @@ A production-grade, thread safe rate limiter built for high concurrency
 ---
 
 ## Component Overview
-**Interceptor** - Intercepts every API requests and calls the Orchestrator to make a decision.
+**Interceptor** — Intercepts every API requests and calls the Orchestrator to make a decision.
+
 **RestAPI Orchestrator** — Delegates to three subsystems in sequence: policy lookup, identity extraction, and key generation. The resolved key and policy are then passed to the algorithm to make an allow/deny decision.
 
 **Policy Registry** — finds the best matching rule for an incoming request path. Backed by a `RuleStore` (interface), with two implementations provided:

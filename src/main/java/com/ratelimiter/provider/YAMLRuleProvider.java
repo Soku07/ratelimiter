@@ -1,7 +1,8 @@
 package com.ratelimiter.provider;
 
 
-import com.ratelimiter.exceptions.InfrastructureException;
+
+import com.ratelimiter.exceptions.applicationexceptions.RuleDataSourceException;
 import com.ratelimiter.model.AbstractRule;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -52,7 +53,7 @@ public class YAMLRuleProvider implements RuleProvider{
             return rules;
         }
         catch (IOException e){
-            throw new InfrastructureException("Unable to load YAML file : ",e);
+            throw new RuleDataSourceException("YAML", e.getMessage(),e);
         }
 
 
