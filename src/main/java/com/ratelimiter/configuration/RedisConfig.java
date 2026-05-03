@@ -70,17 +70,27 @@ public class RedisConfig {
         script.setResultType(Long.class);
         return script;
     }
+    @Bean
+    public RedisScript<Long> fixedWindowAlgorithmScript(){
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>();
+        script.setLocation(new ClassPathResource("luascripts/FixedWindowAlgorithm.lua"));
+        script.setResultType(Long.class);
+        return script;
+    }
+
 
     @Bean
     public Map<RateLimitSpecs.Algorithm, RedisScript<Long>> algorithmScripts(
             RedisScript<Long> tokenBucketAlgorithmScript,
-            RedisScript<Long> probabilisticSlidingWindowScript
+            RedisScript<Long> probabilisticSlidingWindowScript,
+            RedisScript<Long> fixedWindowAlgorithmScript
            ) {
 
         Map<RateLimitSpecs.Algorithm, RedisScript<Long>> scriptMap = new HashMap<>();
 
         scriptMap.put(RateLimitSpecs.Algorithm.TOKEN_BUCKET, tokenBucketAlgorithmScript);
         scriptMap.put(RateLimitSpecs.Algorithm.PROBABILISTIC_SLIDING_WINDOW, probabilisticSlidingWindowScript);
+        scriptMap.put(RateLimitSpecs.Algorithm.FIXED_WINDOW,fixedWindowAlgorithmScript);
 
         return scriptMap;
     }

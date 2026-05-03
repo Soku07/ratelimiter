@@ -1,28 +1,58 @@
 <configuration>
-    <springProperty scope="context" name="LOG_PATH" source="logging.file.path"/>
-    <springProperty scope="context" name="LOG_FILE" source="logging.file.name"/>
-
+    <springProperty scope="context" name="LOG_PATH" source="logging.file.path" defaultValue="logs"/>
     <property name="LOG_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{36} - %msg%n" />
 
-    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %highlight(%-5level) %cyan(%logger{25}) - %msg%n</pattern>
-        </encoder>
-    </appender>
-
-    <appender name="FILE_WRITER" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_PATH}/${LOG_FILE}</file>
+    <!-- 1. INFO File Appender -->
+    <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- Active file is always in the current date folder -->
+        <file>${LOG_PATH}/info.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>${LOG_PATH}/archived/${LOG_FILE}.%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>7</maxHistory>
+            <!-- Creates folder by date: logs/2026-05-03/info.2026-05-03.log -->
+            <fileNamePattern>${LOG_PATH}/%d{yyyy-MM-dd}/info.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
         </rollingPolicy>
-        <encoder>
-            <pattern>${LOG_PATTERN}</pattern>
-        </encoder>
+        <encoder><pattern>${LOG_PATTERN}</pattern></encoder>
     </appender>
 
-    <root level="INFO">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE_WRITER" />
+    <!-- 2. WARN File Appender -->
+    <appender name="WARN_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/warn.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/%d{yyyy-MM-dd}/warn.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder><pattern>${LOG_PATTERN}</pattern></encoder>
+    </appender>
+
+    <!-- 3. ERROR File Appender -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_PATH}/error.log</file>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_PATH}/%d{yyyy-MM-dd}/error.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+        <encoder><pattern>${LOG_PATTERN}</pattern></encoder>
+    </appender>
+
+
+    <root level="WARN">
+<!--        <appender-ref ref="INFO_FILE" />-->
+        <appender-ref ref="WARN_FILE" />
+        <appender-ref ref="ERROR_FILE" />
     </root>
 </configuration>
