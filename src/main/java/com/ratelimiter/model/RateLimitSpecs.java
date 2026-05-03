@@ -9,7 +9,8 @@ public final class RateLimitSpecs {
     }
 
     public enum Algorithm{
-        TOKEN_BUCKET,
-        PROBABILISTIC_SLIDING_WINDOW
+        TOKEN_BUCKET ,
+        PROBABILISTIC_SLIDING_WINDOW,
+        FIXED_WINDOW
     }
 }
