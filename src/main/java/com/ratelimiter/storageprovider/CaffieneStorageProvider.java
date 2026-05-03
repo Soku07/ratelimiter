@@ -2,7 +2,8 @@ package com.ratelimiter.storageprovider;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.ratelimiter.algorithm.RateLimitDecision;
-import com.ratelimiter.exceptions.StorageException;
+
+import com.ratelimiter.exceptions.serversideexceptions.StorageException;
 import com.ratelimiter.model.RateLimitContext;
 import com.ratelimiter.model.RateLimitSpecs;
 import org.springframework.context.annotation.Primary;
@@ -27,7 +28,8 @@ public class CaffieneStorageProvider implements StorageProvider {
                     try{
                         return algorithmLogic.apply(k,(T)oldValue);
                     }catch (Exception e){
-                        throw  new StorageException("Failed to perform atomic operation for key : "+ k,e);
+                        throw new StorageException("Caffeine",k,e.getMessage(),e);
+
                     }
 
                 }

@@ -1,6 +1,7 @@
 package com.ratelimiter.algorithm;
 
-import com.ratelimiter.exceptions.StorageException;
+
+import com.ratelimiter.exceptions.serversideexceptions.StorageException;
 import com.ratelimiter.model.RateLimitPolicy;
 import com.ratelimiter.model.RateLimitSpecs;
 import com.ratelimiter.storageprovider.StorageProvider;

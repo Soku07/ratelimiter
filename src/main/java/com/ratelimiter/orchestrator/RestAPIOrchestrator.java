@@ -2,8 +2,9 @@ package com.ratelimiter.orchestrator;
 
 import com.ratelimiter.algorithm.RateLimitAlgorithm;
 import com.ratelimiter.configuration.RateLimiterSettings;
-import com.ratelimiter.exceptions.InfrastructureException;
-import com.ratelimiter.exceptions.MissingIdentityException;
+
+import com.ratelimiter.exceptions.clientsideexceptions.MissingIdentityException;
+import com.ratelimiter.exceptions.serversideexceptions.InfrastructureException;
 import com.ratelimiter.keyfactory.KeyFactory;
 import com.ratelimiter.model.AbstractRule;
 import com.ratelimiter.model.RateLimitPolicy;

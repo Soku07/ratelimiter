@@ -1,7 +1,8 @@
 package com.ratelimiter.storageprovider;
 
 import com.ratelimiter.algorithm.RateLimitDecision;
-import com.ratelimiter.exceptions.StorageException;
+
+import com.ratelimiter.exceptions.serversideexceptions.StorageException;
 import com.ratelimiter.model.RateLimitContext;
 import com.ratelimiter.model.RateLimitSpecs;
 import org.springframework.context.annotation.Primary;
@@ -40,7 +41,7 @@ public class RedisStorageProvider implements StorageProvider{
             return (T) new RedisDecision(result != null && result == 1);
         }
         catch (Exception e){
-            throw new StorageException("Failed to perform atomic Redis operation for key: " + key, e);
+            throw new StorageException("Redis",key,e.getMessage(),e);
         }
     }
 }

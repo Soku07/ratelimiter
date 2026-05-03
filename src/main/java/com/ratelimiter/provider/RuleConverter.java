@@ -1,6 +1,7 @@
 package com.ratelimiter.provider;
 
-import com.ratelimiter.exceptions.InvalidPolicyException;
+
+import com.ratelimiter.exceptions.applicationexceptions.InvalidPolicyException;
 import com.ratelimiter.model.AbstractRule;
 import com.ratelimiter.model.RateLimitPolicy;
 import com.ratelimiter.model.RateLimitSpecs;
@@ -23,7 +24,7 @@ public class RuleConverter {
             return ruleFactory.createRule(ruleDTO.getPathPattern(), priority, policy);
         }
         catch (Exception e) {
-            throw new InvalidPolicyException(e.getMessage(), e);
+            throw new InvalidPolicyException(ruleDTO.getPathPattern(),e.getMessage());
         }
     }
     private RateLimitPolicy buildPolicy(RuleDTO ruleDTO) {
