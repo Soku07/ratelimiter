@@ -1,7 +1,7 @@
 package com.ratelimiter.storageprovider;
 
 import com.github.benmanes.caffeine.cache.Cache;
-import com.ratelimiter.algorithm.RateLimitDecision;
+import com.ratelimiter.algorithm.RateLimitAlgorithmDecision;
 
 import com.ratelimiter.exceptions.serversideexceptions.StorageException;
 import com.ratelimiter.model.RateLimitContext;
@@ -21,7 +21,7 @@ public class CaffieneStorageProvider implements StorageProvider {
     }
 
     @Override
-    public <T extends RateLimitDecision> T atomicCompute(String key, RateLimitSpecs.Algorithm algorithm, RateLimitContext context, BiFunction<String, T, T> algorithmLogic, Duration timeToLive) {
+    public <T extends RateLimitAlgorithmDecision> T atomicCompute(String key, RateLimitSpecs.Algorithm algorithm, RateLimitContext context, BiFunction<String, T, T> algorithmLogic, Duration timeToLive) {
         @SuppressWarnings("unchecked")
         T result = (T) cache.asMap().compute(
                 key,(k, oldValue) -> {

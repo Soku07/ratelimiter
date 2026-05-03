@@ -26,12 +26,12 @@ public class TokenBucketAlgorithm implements RateLimitAlgorithm{
                 policy.limit(),
                 policy.window().toMillis() * 2
                 );
-            RateLimitDecision rateLimitDecision = storageProvider.atomicCompute(key, RateLimitSpecs.Algorithm.TOKEN_BUCKET,rateLimitContext,
+            RateLimitAlgorithmDecision rateLimitAlgorithmDecision = storageProvider.atomicCompute(key, RateLimitSpecs.Algorithm.TOKEN_BUCKET,rateLimitContext,
                     (k, currentState) -> applyTokenBucketAlgorithm(k,(TokenBucketState) currentState, policy),
                     policy.window()
             );
 
-        return rateLimitDecision.isAllowed();
+        return rateLimitAlgorithmDecision.isAllowed();
     }
 
     @Override

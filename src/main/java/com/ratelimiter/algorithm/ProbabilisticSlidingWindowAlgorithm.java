@@ -25,11 +25,11 @@ public class ProbabilisticSlidingWindowAlgorithm implements RateLimitAlgorithm {
                 policy.limit(),
                 policy.window().toMillis() * 2
         );
-        RateLimitDecision rateLimitDecision = storageProvider.atomicCompute(key, RateLimitSpecs.Algorithm.TOKEN_BUCKET,rateLimitContext,
+        RateLimitAlgorithmDecision rateLimitAlgorithmDecision = storageProvider.atomicCompute(key, RateLimitSpecs.Algorithm.TOKEN_BUCKET,rateLimitContext,
                 (k, currentState) -> applyProbabilisticSlidingWindowAlgorithm(k,(ProbabilisticSlidingWindowState) currentState, policy),
                 policy.window()
         );
-        return rateLimitDecision.isAllowed();
+        return rateLimitAlgorithmDecision.isAllowed();
     }
 
     @Override
@@ -43,7 +43,7 @@ public class ProbabilisticSlidingWindowAlgorithm implements RateLimitAlgorithm {
                        In this case the curr bucket cannot become the prev bucket so its like a fresh start
        Current bucket is invalid (now > bucket.endTimeStamp)
     */
-    protected  RateLimitDecision applyProbabilisticSlidingWindowAlgorithm(String key, ProbabilisticSlidingWindowState state, RateLimitPolicy policy){
+    protected RateLimitAlgorithmDecision applyProbabilisticSlidingWindowAlgorithm(String key, ProbabilisticSlidingWindowState state, RateLimitPolicy policy){
         long now = System.currentTimeMillis();
         long windowMs = policy.window().toMillis();
         if (state == null || now > state.currBucket().timeStampEnd() + windowMs) {

@@ -5,6 +5,6 @@ public record TokenBucketState (
         long lastRefillTimeStamp,
         boolean isAllowed
 
-) implements RateLimitDecision {
+) implements RateLimitAlgorithmDecision {
 
 }

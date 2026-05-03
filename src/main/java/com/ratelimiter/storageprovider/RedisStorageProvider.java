@@ -1,11 +1,10 @@
 package com.ratelimiter.storageprovider;
 
-import com.ratelimiter.algorithm.RateLimitDecision;
+import com.ratelimiter.algorithm.RateLimitAlgorithmDecision;
 
 import com.ratelimiter.exceptions.serversideexceptions.StorageException;
 import com.ratelimiter.model.RateLimitContext;
 import com.ratelimiter.model.RateLimitSpecs;
-import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Component;
@@ -20,7 +19,7 @@ import java.util.function.BiFunction;
 public class RedisStorageProvider implements StorageProvider{
     private final RedisTemplate<String,String> redisTemplate;
     private final Map<RateLimitSpecs.Algorithm, RedisScript<Long>> algorithmRedisScriptMap;
-    private record RedisDecision(boolean isAllowed) implements RateLimitDecision {}
+    private record RedisDecision(boolean isAllowed) implements RateLimitAlgorithmDecision {}
     public RedisStorageProvider(RedisTemplate<String,String> redisTemplate, Map<RateLimitSpecs.Algorithm, RedisScript<Long>> algorithmRedisScriptMap){
         this.redisTemplate = redisTemplate;
         this.algorithmRedisScriptMap = algorithmRedisScriptMap;
@@ -28,7 +27,7 @@ public class RedisStorageProvider implements StorageProvider{
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T extends RateLimitDecision> T atomicCompute(String key, RateLimitSpecs.Algorithm algorithm, RateLimitContext context, BiFunction<String, T, T> algorithmLogic, Duration timeToLive) {
+    public <T extends RateLimitAlgorithmDecision> T atomicCompute(String key, RateLimitSpecs.Algorithm algorithm, RateLimitContext context, BiFunction<String, T, T> algorithmLogic, Duration timeToLive) {
         try {
             Object[] redisArgs = new Object[]{
                     String.valueOf(context.capacity()),     // ARGV[1]

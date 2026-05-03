@@ -1,5 +1,5 @@
 package com.ratelimiter.algorithm;
 
-public interface RateLimitDecision {
+public interface RateLimitAlgorithmDecision {
     boolean isAllowed();
 }
