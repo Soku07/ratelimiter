@@ -3,10 +3,12 @@ package com.ratelimiter.orchestrator;
 import com.ratelimiter.algorithm.RateLimitAlgorithm;
 import com.ratelimiter.configuration.RateLimiterSettings;
 
+import com.ratelimiter.exceptions.clientsideexceptions.ClientSideException;
 import com.ratelimiter.exceptions.clientsideexceptions.MissingIdentityException;
 import com.ratelimiter.exceptions.serversideexceptions.InfrastructureException;
 import com.ratelimiter.keyfactory.KeyFactory;
 import com.ratelimiter.model.AbstractRule;
+import com.ratelimiter.model.RateLimitDecision;
 import com.ratelimiter.model.RateLimitPolicy;
 import com.ratelimiter.model.RateLimitSpecs;
 import com.ratelimiter.provider.PolicyRegistry;
@@ -45,40 +47,57 @@ public class RestAPIOrchestrator implements RateLimitOrchestrator {
         this.rateLimiterSettings = rateLimiterSettings;
     }
 
-    private boolean processRule(HttpServletRequest request, AbstractRule rule) {
-        try {
-            RateLimitPolicy policy = rule.getPolicy();
-            String identity = identityResolvers.get(policy.identityStrategy())
-                    .resolve(request)
-                    .orElseThrow(()-> new MissingIdentityException(policy.identityStrategy().toString(), rule.getPathPattern(),request.getRequestURI()));
+    private RateLimitDecision processRule(HttpServletRequest request, AbstractRule rule) {
+        RateLimitPolicy policy = rule.getPolicy();
 
-            String key = keyFactory.getKey(rule, identity);
-            return rateLimitAlgorithms.get(policy.algorithm()).isAllowed(key,policy);
-        }
-        catch (IllegalArgumentException | MissingIdentityException e) {
-            log.error("Rate limit blocked due to invalid request/identity: {}", e.getMessage());
-            return false;
-        }
-        catch (InfrastructureException e){
-            log.error("Storage/Infra failure. Applying bypass [{}]: {}",
-                    rateLimiterSettings.isByPassOnException(), e.getMessage(), e);
-            return rateLimiterSettings.isByPassOnException();
-        }
-        catch (Exception e) {
-            log.error("Critical unexpected error in rate limiter logic", e);
-            return false;
-        }
+        // Resolve identity (Throws MissingIdentityException/BadRequestException)
+        String identity = identityResolvers.get(policy.identityStrategy())
+                .resolve(request)
+                .orElseThrow(() -> new MissingIdentityException(
+                        policy.identityStrategy().toString(),
+                        rule.getPathPattern(),
+                        request.getRequestURI()));
+
+        String key = keyFactory.getKey(rule, identity);
+
+        // Check algorithm (Throws StorageException if Redis/Caffeine fails)
+        boolean allowed = rateLimitAlgorithms.get(policy.algorithm()).isAllowed(key, policy);
+
+        return allowed ? RateLimitDecision.allow()
+                : RateLimitDecision.deny(429, "Quota Exceeded", "Please slow down.");
 
     }
 
     //Code improvised with Modern Java syntax
     @Override
-    public boolean isAllowed(String resourcePath, Object requestSource) {
-        if(!rateLimiterSettings.isEnabled()) return true;
+    public RateLimitDecision isAllowed(String resourcePath, Object requestSource) {
+        if (!rateLimiterSettings.isEnabled()) return RateLimitDecision.allow();
+
         HttpServletRequest request = (HttpServletRequest) requestSource;
-        return policyRegistry.getBestMatch(resourcePath)
-                .map(rule -> processRule(request,rule) )
-                .orElseGet(rateLimiterSettings::isAllowRequestOnMatchingRuleNotFound);
+
+        try {
+            return policyRegistry.getBestMatch(resourcePath)
+                    .map(rule -> processRule(request, rule))
+                    .orElseGet(() -> rateLimiterSettings.isAllowRequestOnMatchingRuleNotFound()
+                            ? RateLimitDecision.allow()
+                            : RateLimitDecision.deny(404, "Not Found", "No rate limit policy matches this path."));
+        }
+        catch (ClientSideException e) {
+            log.warn("Rate limit rejected due to bad request: {}", e.getMessage());
+            return RateLimitDecision.deny(e.getStatus(), "Bad Request", e.getMessage());
+        }
+        catch (InfrastructureException e) {
+            log.error("Infrastructure failure: {}", e.getMessage(), e);
+            if (rateLimiterSettings.isByPassOnException()) {
+                log.warn("Fail-Open: Bypassing rate limit check due to infrastructure error.");
+                return RateLimitDecision.allow();
+            }
+            return RateLimitDecision.deny(e.getStatus(), "Service Error", "Internal rate limiter failure.");
+        }
+        catch (Exception e) {
+            log.error("Unexpected critical failure", e);
+            return RateLimitDecision.deny(500, "Internal Error", "An unexpected error occurred.");
+        }
     }
 
     // Code written by me
