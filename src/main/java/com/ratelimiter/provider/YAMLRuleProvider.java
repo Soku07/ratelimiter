@@ -48,7 +48,7 @@ public class YAMLRuleProvider implements RuleProvider{
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
-            log.info("Successfully loaded {} rules", rules.size());
+            log.warn("Successfully loaded {} rules", rules.size());
 
             return rules;
         }
