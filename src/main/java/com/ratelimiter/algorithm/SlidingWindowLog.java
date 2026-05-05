@@ -40,7 +40,6 @@ public class SlidingWindowLog implements RateLimitAlgorithm{
     protected SlidingWindowLogState applySlidingWindowLogAlgorithm(SlidingWindowLogState state , RateLimitPolicy policy){
         long now = System.currentTimeMillis();
         long windowMillis = policy.window().toMillis();
-        long windowStart = now - windowMillis;
         if(state == null || now > state.timeStampLog().getLast() + windowMillis){
             return new SlidingWindowLogState(new ArrayDeque<>(List.of(now)),true);
         }
