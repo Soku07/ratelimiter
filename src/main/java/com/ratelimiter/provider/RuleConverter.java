@@ -37,6 +37,10 @@ public class RuleConverter {
             throw new IllegalArgumentException("Rate limit window must be at least 1 second for stability.");
         }
         RateLimitSpecs.Algorithm algorithm = RateLimitSpecs.Algorithm.valueOf(policy.getAlgorithmKey());
+        if(algorithm == RateLimitSpecs.Algorithm.SLIDING_WINDOW_LOG && policy.getLimit() > 10000){
+            algorithm = RateLimitSpecs.Algorithm.PROBABILISTIC_SLIDING_WINDOW;
+            log.warn("Sliding Window Log is not efficient for large limits. Defaulting to Probabilistic Sliding Window algorithm.");
+        }
         RateLimitSpecs.Identity identity = RateLimitSpecs.Identity.valueOf(policy.getIdentityStrategy());
         //Add validation for Algorithm key and identity strategy also
         return new RateLimitPolicy(

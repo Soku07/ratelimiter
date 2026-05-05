@@ -30,6 +30,14 @@ clients:
           algorithmKey: "FIXED_WINDOW"
           identityStrategy: "AUTH_TOKEN"
 
+      - pathPattern: "/api/v1/payments/get-interest"
+        priority: 100
+        policy:
+          limit: 3
+          window: "PT10S"
+          algorithmKey: "SLIDING_WINDOW_LOG"
+          identityStrategy: "AUTH_TOKEN"
+
       # Generic: Payments
       - pathPattern: "/api/v1/payments/**"
         policy:
