@@ -18,7 +18,7 @@ A production-grade, thread safe rate limiter built for high concurrency
 
 ---
 ## Architecture
-![Architecture.png](design/Architecture.png)
+![SystemArchitecture.png](design/SystemArchitecture.png)
 
 ---
 
