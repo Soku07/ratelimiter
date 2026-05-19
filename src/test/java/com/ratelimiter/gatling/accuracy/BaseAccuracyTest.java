@@ -3,8 +3,11 @@ package com.ratelimiter.gatling.accuracy;
 import io.gatling.javaapi.core.ScenarioBuilder;
 import io.gatling.javaapi.core.Simulation;
 import io.gatling.javaapi.http.HttpProtocolBuilder;
-import java.util.Iterator;
-import java.util.Map;
+
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -14,11 +17,10 @@ import static io.gatling.javaapi.http.HttpDsl.status;
 
 
 public abstract class BaseAccuracyTest extends Simulation {
+    public record EndpointRule(String method, String endpoint, int limit) {}
     protected static final AtomicInteger COUNT_200 = new AtomicInteger(0);
     protected static final AtomicInteger COUNT_429 = new AtomicInteger(0);
     protected final String baseUrl = System.getProperty("BASE_URL", "http://localhost:8080");
-    protected final String testToken = System.getProperty("TEST_TOKEN", "accuracy-spec-user");
-    protected final String testIp = System.getProperty("TEST_IP", "192.168.1.100");
 
     protected final HttpProtocolBuilder httpProtocol = http
             .baseUrl(baseUrl)
@@ -29,24 +31,64 @@ public abstract class BaseAccuracyTest extends Simulation {
     // We have to pass same token and ip so that a particular bucket is tested
     protected final Iterator<Map<String, Object>> singleIdentityFeeder =
             Stream.generate(() -> Map.<String, Object>of(
-                    "token", testToken,
-                    "ip", testIp
+                    "token", System.getProperty("TEST_TOKEN", "accuracy-spec-user"),
+                    "ip", System.getProperty("TEST_IP", "192.168.1.100")
             )).iterator();
 
-    protected ScenarioBuilder createAccuracyScenario(String scenarioName, String method, String endPoint,String payload) {
-        var requestBuilder = http(session -> "STATUS-" + session.getString("httpStatus"))
-                .httpRequest(method, endPoint)
-                .header("Authorization", "Bearer #{token}")
-                .header("X-Forwarded-For", "#{ip}");
+    protected List<EndpointRule> loadEnpointAndItsLimitFromCSV(){
+        String csvFilePath = System.getProperty("ENDPOINT_CSV_PATH","");
+        List<EndpointRule> rules = new ArrayList<>();
+        String line;
+        try (BufferedReader br = new BufferedReader(new FileReader(csvFilePath))) {
+            br.readLine(); // Skip CSV column headers (method,endpoint,limit)
+            while ((line = br.readLine()) != null) {
+                if (line.isBlank()) continue;
 
-        if (payload != null && !payload.isBlank()) {
-            requestBuilder = requestBuilder.body(StringBody(payload));
+                String[] data = line.split(",");
+                if (data.length >= 3) {
+                    String method = data[0].trim();
+                    String endpoint = data[1].trim();
+                    int limit = Integer.parseInt(data[2].trim());
+
+                    rules.add(new EndpointRule(method, endpoint, limit));
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read manifest file from path: " + csvFilePath, e);
         }
-        return scenario(scenarioName)
-                .feed(singleIdentityFeeder)
+        if (rules.isEmpty()) {
+            throw new IllegalStateException("Your test case input file is empty! Cannot initialize test.");
+        }
+        return Collections.unmodifiableList(rules);
+    }
+
+    protected Iterator<Map<String, Object>> createDynamicIdentityFeeder(String prefix) {
+        Random random = new Random();
+        return Stream.generate(() -> {
+            // Randomize the 2nd, 3rd, and 4th octets for maximum scale
+            int octet2 = 16 + random.nextInt(16);   // 16 to 31
+            int octet3 = random.nextInt(256);       // 0 to 255
+            int octet4 = 1 + random.nextInt(254);   // 1 to 254 (avoiding network/broadcast boundaries)
+
+            String randomIp = String.format("172.%d.%d.%d", octet2, octet3, octet4);
+
+            return Map.<String, Object>of(
+                    "token", "token-" + prefix + "-" + UUID.randomUUID().toString().substring(0, 8),
+                    "ip", randomIp
+            );
+        }).iterator();
+    }
+
+
+    protected ScenarioBuilder createAccuracyScenario(String name, String method, String endpoint, Iterator<Map<String, Object>> feeder) {
+        return scenario(name)
+                .feed(feeder)
                 .exec(
-                        // Extract the status code natively and save it to the user session
-                        requestBuilder.check(status().in(200, 429).saveAs("httpStatus"))
+                        http(session -> "STATUS-" + session.getString("httpStatus"))
+                                .httpRequest(method, endpoint)
+                                .header("Authorization", "Bearer #{token}")
+                                .header("X-Forwarded-For", "#{ip}")
+                                .check(status().in(200, 429).saveAs("httpStatus"))
                 )
                 .doIf(session -> session.getInt("httpStatus") == 200).then(
                         exec(session -> { COUNT_200.incrementAndGet(); return session; })
