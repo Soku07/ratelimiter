@@ -1,0 +1,2 @@
+method,endpoint,limit
+POST,/api/v1/payments/execute,1000
