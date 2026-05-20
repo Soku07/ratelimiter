@@ -33,6 +33,8 @@ public class ConcurrentUnderLimitSingleUserTest extends BaseAccuracyTest {
                 targetRule.endpoint(),
                 singleIdentityFeeder
         );
+        //atOnceUsers provides a thread for each virtual user making the test concurrent.
+        //repeatPerUser is set to 1 because atOnceUsers(requestsToTrigger) is already creating "requestsToTrigger" concurrent requests
         setUp(scenario.injectOpen(atOnceUsers(requestsToTrigger))).protocols(httpProtocol);
     }
     @Override
