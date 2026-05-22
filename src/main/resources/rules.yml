@@ -1,6 +1,14 @@
 clients:
   - clientId: "default-gateway"
     rules:
+      - pathPattern: "/api/v1/token-bucket-test"
+        priority: 100
+        policy:
+          limit: 100
+          window: "PT10S"
+          algorithmKey: "TOKEN_BUCKET"
+          identityStrategy: "AUTH_TOKEN"
+
       # --- Payments Service ---
       - pathPattern: "/api/v1/payments/execute"
         priority: 100

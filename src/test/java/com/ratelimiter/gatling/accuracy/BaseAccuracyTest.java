@@ -7,6 +7,7 @@ import io.gatling.javaapi.http.HttpRequestActionBuilder;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -18,7 +19,9 @@ import static io.gatling.javaapi.http.HttpDsl.status;
 
 
 public abstract class BaseAccuracyTest extends Simulation {
-    public record EndpointRule(String method, String endpoint, int limit) {}
+    public record EndpointRule(String method, String endpoint, int limit, Duration window) {
+
+    }
     protected static final AtomicInteger COUNT_200 = new AtomicInteger(0);
     protected static final AtomicInteger COUNT_429 = new AtomicInteger(0);
     protected final String baseUrl = System.getProperty("BASE_URL", "http://localhost:8080");
@@ -50,8 +53,10 @@ public abstract class BaseAccuracyTest extends Simulation {
                     String method = data[0].trim();
                     String endpoint = data[1].trim();
                     int limit = Integer.parseInt(data[2].trim());
-
-                    rules.add(new EndpointRule(method, endpoint, limit));
+                    Duration window = (data.length >= 4 && !data[3].trim().isBlank())
+                            ? Duration.parse(data[3].trim())
+                            : null;
+                    rules.add(new EndpointRule(method, endpoint, limit,window));
                 }
             }
         } catch (IOException e) {
