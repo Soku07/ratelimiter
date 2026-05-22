@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 
 public class ConcurrentUnderLimitMultiUserSingleEndpointTest extends BaseAccuracyTest{
 
-    private int configuredLimit;
+    private final int configuredLimit;
     private  int requestsToTriggerPerUser = 10;
     private  int userCount = 10;
 
@@ -24,6 +24,14 @@ public class ConcurrentUnderLimitMultiUserSingleEndpointTest extends BaseAccurac
         }
         if(CONCURRENT_REQUESTS != null && !CONCURRENT_REQUESTS.isBlank()){
             this.requestsToTriggerPerUser = Integer.parseInt(CONCURRENT_REQUESTS);
+        }
+
+        if(requestsToTriggerPerUser > configuredLimit){
+            throw new IllegalArgumentException(String.format(
+                    "CRITICAL SETUP ERROR: Trigger volume (%d) must be strictly LESS than the configured limit (%d) " +
+                            "for an Under-Limit Accuracy test scenario.",
+                    requestsToTriggerPerUser, configuredLimit
+            ));
         }
         List<Map<String, Object>> identityPool = new ArrayList<>();
         Random random = new Random();

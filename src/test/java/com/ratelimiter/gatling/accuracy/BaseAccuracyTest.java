@@ -1,8 +1,8 @@
 package com.ratelimiter.gatling.accuracy;
 
-import io.gatling.javaapi.core.ScenarioBuilder;
-import io.gatling.javaapi.core.Simulation;
+import io.gatling.javaapi.core.*;
 import io.gatling.javaapi.http.HttpProtocolBuilder;
+import io.gatling.javaapi.http.HttpRequestActionBuilder;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -11,7 +11,8 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
-import static io.gatling.javaapi.core.CoreDsl.*;
+import static io.gatling.javaapi.core.CoreDsl.exec;
+import static io.gatling.javaapi.core.CoreDsl.scenario;
 import static io.gatling.javaapi.http.HttpDsl.http;
 import static io.gatling.javaapi.http.HttpDsl.status;
 
@@ -81,21 +82,44 @@ public abstract class BaseAccuracyTest extends Simulation {
 
 
     protected ScenarioBuilder createAccuracyScenario(String name, String method, String endpoint, Iterator<Map<String, Object>> feeder) {
+        return buildAccuracyScenario(name, feeder,
+                exec(buildRequest(http(session -> requestName(session)).httpRequest(method, endpoint)))
+        );
+    }
+
+    protected ScenarioBuilder createAccuracyScenario(String name, Iterator<Map<String, Object>> feeder) {
+        return buildAccuracyScenario(name, feeder,
+                exec(session -> session.set("resolvedMethod", session.getString("method").toUpperCase()))
+                        .doSwitch("#{resolvedMethod}").on(
+                                Choice.withKey("GET",    exec(buildRequest(http("GET-REQ").get("#{endpoint}")))),
+                                Choice.withKey("POST",   exec(buildRequest(http("POST-REQ").post("#{endpoint}")))),
+                                Choice.withKey("PUT",    exec(buildRequest(http("PUT-REQ").put("#{endpoint}")))),
+                                Choice.withKey("DELETE", exec(buildRequest(http("DELETE-REQ").delete("#{endpoint}"))))
+                        )
+        );
+    }
+
+    private ScenarioBuilder buildAccuracyScenario(String name, Iterator<Map<String, Object>> feeder, ChainBuilder requestChain) {
         return scenario(name)
                 .feed(feeder)
-                .exec(
-                        http(session -> "STATUS-" + session.getString("httpStatus"))
-                                .httpRequest(method, endpoint)
-                                .header("Authorization", "Bearer #{token}")
-                                .header("X-Forwarded-For", "#{ip}")
-                                .check(status().in(200, 429).saveAs("httpStatus"))
-                )
-                .doIf(session -> session.getInt("httpStatus") == 200).then(
+                .exec(requestChain)
+                .doIf(session -> session.contains("httpStatus") && session.getInt("httpStatus") == 200).then(
                         exec(session -> { COUNT_200.incrementAndGet(); return session; })
                 )
-                .doIf(session -> session.getInt("httpStatus") == 429).then(
+                .doIf(session -> session.contains("httpStatus") && session.getInt("httpStatus") == 429).then(
                         exec(session -> { COUNT_429.incrementAndGet(); return session; })
                 );
+    }
+
+    private HttpRequestActionBuilder buildRequest(HttpRequestActionBuilder builder) {
+        return builder
+                .header("Authorization", "Bearer #{token}")
+                .header("X-Forwarded-For", "#{ip}")
+                .check(status().in(200, 429).saveAs("httpStatus"));
+    }
+
+    private static String requestName(Session session) {
+        return "STATUS-" + (session.contains("httpStatus") ? session.getInt("httpStatus") : "UNKNOWN");
     }
     @Override
     public void after() {
