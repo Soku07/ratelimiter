@@ -1,0 +1,2 @@
+method,endpoint,limit,window
+POST,/api/v1/token-bucket-test,100,PT10s
