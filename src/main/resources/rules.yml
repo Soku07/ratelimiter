@@ -4,10 +4,36 @@ clients:
       - pathPattern: "/api/v1/token-bucket-test"
         priority: 100
         policy:
-          limit: 100
+          limit: 1
           window: "PT10S"
           algorithmKey: "TOKEN_BUCKET"
           identityStrategy: "AUTH_TOKEN"
+
+      - pathPattern: "/api/v1/fixed-window-test"
+        priority: 100
+        policy:
+          limit: 100
+          window: "PT10S"
+          algorithmKey: "FIXED_WINDOW"
+          identityStrategy: "AUTH_TOKEN"
+
+      - pathPattern: "/api/v1/sliding-window-log-test"
+        priority: 100
+        policy:
+          limit: 100
+          window: "PT10S"
+          algorithmKey: "SLIDING_WINDOW_LOG"
+          identityStrategy: "AUTH_TOKEN"
+
+      - pathPattern: "/api/v1/sliding-window-probabilistic-test"
+        priority: 100
+        policy:
+          limit: 5
+          window: "PT10S"
+          algorithmKey: "PROBABILISTIC_SLIDING_WINDOW"
+          identityStrategy: "AUTH_TOKEN"
+
+
 
       # --- Payments Service ---
       - pathPattern: "/api/v1/payments/execute"
@@ -96,9 +122,9 @@ clients:
       - pathPattern: "/api/v1/cart/items"
         priority: 145
         policy:
-          limit: 1200
-          window: "PT1M"
-          algorithmKey: "SLIDING_WINDOW_LOG"
+          limit: 5
+          window: "PT10s"
+          algorithmKey: "FIXED_WINDOW"
           identityStrategy: "AUTH_TOKEN"
 
       # --- Catalog Browsing (Public Unauthenticated Data) ---
