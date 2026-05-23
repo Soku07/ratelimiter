@@ -7,7 +7,6 @@ local ttl = tonumber(ARGV[5])
 
 local t = redis.call('TIME')
 now = (tonumber(t[1]) * 1000) + math.floor(tonumber(t[2]) / 1000)
-
 --Cleaned up version
 
 local windowStart = now - window
@@ -28,7 +27,13 @@ else
 end
 
 if allowed then
-    redis.call('ZADD', key, now, now)
+    local counterKey = key .. ":seq"
+    local seq = redis.call('INCR', counterKey)
+    redis.call('PEXPIRE', counterKey, window + 1000)
+
+    -- Bind the unique sequence token to prevent unique member collisions
+    local uniqueMember = now .. ":" .. seq
+    redis.call('ZADD', key, now, uniqueMember)
     redis.call('PEXPIRE', key, window + 1000)
     return 1
 end
