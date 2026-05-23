@@ -1,0 +1,2 @@
+method,endpoint,limit,window
+POST,/api/v1/sliding-window-probabilistic-test,10,PT1s

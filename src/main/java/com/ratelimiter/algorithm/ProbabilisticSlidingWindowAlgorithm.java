@@ -25,7 +25,7 @@ public class ProbabilisticSlidingWindowAlgorithm implements RateLimitAlgorithm {
                 policy.limit(),
                 policy.window().toMillis() * 2
         );
-        RateLimitAlgorithmDecision rateLimitAlgorithmDecision = storageProvider.atomicCompute(key, RateLimitSpecs.Algorithm.TOKEN_BUCKET,rateLimitContext,
+        RateLimitAlgorithmDecision rateLimitAlgorithmDecision = storageProvider.atomicCompute(key, RateLimitSpecs.Algorithm.PROBABILISTIC_SLIDING_WINDOW,rateLimitContext,
                 (k, currentState) -> applyProbabilisticSlidingWindowAlgorithm(k,(ProbabilisticSlidingWindowState) currentState, policy),
                 policy.window()
         );

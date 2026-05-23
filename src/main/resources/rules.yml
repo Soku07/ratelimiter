@@ -1,12 +1,7 @@
-# ========================================================
-# Rate Limiter Configuration (Single-Client Mode)
-# Architecture: Extensible Client-Rule Hierarchy
-# ========================================================
 clients:
   - clientId: "default-gateway"
     rules:
-      # Specific: Payments
-      - pathPattern: "/api/v1/payments/execute"
+      - pathPattern: "/api/v1/token-bucket-test"
         priority: 100
         policy:
           limit: 1
@@ -14,43 +9,205 @@ clients:
           algorithmKey: "TOKEN_BUCKET"
           identityStrategy: "AUTH_TOKEN"
 
-      - pathPattern: "/api/v1/payments/pay"
+      - pathPattern: "/api/v1/fixed-window-test"
         priority: 100
         policy:
-          limit: 3
-          window: "PT10S"
-          algorithmKey: "PROBABILISTIC_SLIDING_WINDOW"
-          identityStrategy: "AUTH_TOKEN"
-
-      - pathPattern: "/api/v1/payments/get"
-        priority: 100
-        policy:
-          limit: 3
+          limit: 100
           window: "PT10S"
           algorithmKey: "FIXED_WINDOW"
           identityStrategy: "AUTH_TOKEN"
 
-      - pathPattern: "/api/v1/payments/get-interest"
+      - pathPattern: "/api/v1/sliding-window-log-test"
         priority: 100
         policy:
-          limit: 3
+          limit: 1000
           window: "PT10S"
           algorithmKey: "SLIDING_WINDOW_LOG"
           identityStrategy: "AUTH_TOKEN"
 
-      # Generic: Payments
-      - pathPattern: "/api/v1/payments/**"
+      - pathPattern: "/api/v1/sliding-window-probabilistic-test"
+        priority: 100
         policy:
-          limit: 5
-          window: "PT1H"
-          algorithmKey: "TOKEN_BUCKET_MALFORMED"
+          limit: 10
+          window: "PT1s"
+          algorithmKey: "PROBABILISTIC_SLIDING_WINDOW"
           identityStrategy: "AUTH_TOKEN"
 
-      # Global Catch-all
-      - pathPattern: "/**"
-        priority: 1
+
+
+      # --- Payments Service ---
+      - pathPattern: "/api/v1/payments/execute"
+        priority: 100
         policy:
-          limit: 100
+          limit: 1000
+          window: "PT10S"
+          algorithmKey: "TOKEN_BUCKET"
+          identityStrategy: "AUTH_TOKEN"
+
+      - pathPattern: "/api/v1/payments/history"
+        priority: 95
+        policy:
+          limit: 2500
+          window: "PT1M"
+          algorithmKey: "SLIDING_WINDOW_LOG"
+          identityStrategy: "AUTH_TOKEN"
+
+      - pathPattern: "/api/v1/payments/refund"
+        priority: 98
+        policy:
+          limit: 200
+          window: "PT1H"
+          algorithmKey: "FIXED_WINDOW"
+          identityStrategy: "AUTH_TOKEN"
+
+      # --- Authentication Service (Heavy IP Defensiveness) ---
+      - pathPattern: "/api/v1/auth/login"
+        priority: 200
+        policy:
+          limit: 150
+          window: "PT1M"
+          algorithmKey: "TOKEN_BUCKET"
+          identityStrategy: "IP_ADDRESS"
+
+      - pathPattern: "/api/v1/auth/refresh"
+        priority: 190
+        policy:
+          limit: 300
+          window: "PT15M"
+          algorithmKey: "FIXED_WINDOW"
+          identityStrategy: "AUTH_TOKEN"
+
+      - pathPattern: "/api/v1/auth/logout"
+        priority: 180
+        policy:
+          limit: 500
+          window: "PT30M"
+          algorithmKey: "SLIDING_WINDOW_LOG"
+          identityStrategy: "AUTH_TOKEN"
+
+      # --- User Management ---
+      - pathPattern: "/api/v1/users/profile"
+        priority: 50
+        policy:
+          limit: 3000
+          window: "PT1M"
+          algorithmKey: "PROBABILISTIC_SLIDING_WINDOW"
+          identityStrategy: "AUTH_TOKEN"
+
+      - pathPattern: "/api/v1/users/settings"
+        priority: 55
+        policy:
+          limit: 800
+          window: "PT5M"
+          algorithmKey: "FIXED_WINDOW"
+          identityStrategy: "AUTH_TOKEN"
+
+      # --- Ordering & E-Commerce Service ---
+      - pathPattern: "/api/v1/orders/checkout"
+        priority: 150
+        policy:
+          limit: 600
           window: "PT1M"
           algorithmKey: "TOKEN_BUCKET"
           identityStrategy: "AUTH_TOKEN"
+
+      - pathPattern: "/api/v1/orders/status"
+        priority: 140
+        policy:
+          limit: 4000
+          window: "PT1M"
+          algorithmKey: "PROBABILISTIC_SLIDING_WINDOW"
+          identityStrategy: "AUTH_TOKEN"
+
+      - pathPattern: "/api/v1/cart/items"
+        priority: 145
+        policy:
+          limit: 5
+          window: "PT10s"
+          algorithmKey: "FIXED_WINDOW"
+          identityStrategy: "AUTH_TOKEN"
+
+      # --- Catalog Browsing (Public Unauthenticated Data) ---
+      - pathPattern: "/api/v1/catalog/products"
+        priority: 10
+        policy:
+          limit: 8000
+          window: "PT1M"
+          algorithmKey: "PROBABILISTIC_SLIDING_WINDOW"
+          identityStrategy: "IP_ADDRESS"
+
+      - pathPattern: "/api/v1/catalog/search"
+        priority: 15
+        policy:
+          limit: 5000
+          window: "PT1M"
+          algorithmKey: "TOKEN_BUCKET"
+          identityStrategy: "IP_ADDRESS"
+
+      # --- Notifications Service ---
+      - pathPattern: "/api/v1/notifications/push"
+        priority: 70
+        policy:
+          limit: 1800
+          window: "PT1M"
+          algorithmKey: "FIXED_WINDOW"
+          identityStrategy: "AUTH_TOKEN"
+
+      - pathPattern: "/api/v1/notifications/email"
+        priority: 75
+        policy:
+          limit: 1000
+          window: "PT5M"
+          algorithmKey: "SLIDING_WINDOW_LOG"
+          identityStrategy: "AUTH_TOKEN"
+
+      # --- High-Volume Ingestion Analytics (High Capacity Limits) ---
+      - pathPattern: "/api/v1/analytics/clickstream"
+        priority: 5
+        policy:
+          limit: 15000
+          window: "PT1M"
+          algorithmKey: "PROBABILISTIC_SLIDING_WINDOW"
+          identityStrategy: "IP_ADDRESS"
+
+      - pathPattern: "/api/v1/analytics/telemetry"
+        priority: 6
+        policy:
+          limit: 20000
+          window: "PT1M"
+          algorithmKey: "TOKEN_BUCKET"
+          identityStrategy: "AUTH_TOKEN"
+
+      # --- Customer Support Core ---
+      - pathPattern: "/api/v1/support/tickets"
+        priority: 40
+        policy:
+          limit: 400
+          window: "PT10M"
+          algorithmKey: "FIXED_WINDOW"
+          identityStrategy: "AUTH_TOKEN"
+
+      - pathPattern: "/api/v1/support/chat"
+        priority: 42
+        policy:
+          limit: 1100
+          window: "PT1M"
+          algorithmKey: "SLIDING_WINDOW_LOG"
+          identityStrategy: "AUTH_TOKEN"
+
+      # --- Inventory Service ---
+      - pathPattern: "/api/v1/inventory/check"
+        priority: 85
+        policy:
+          limit: 6500
+          window: "PT1M"
+          algorithmKey: "TOKEN_BUCKET"
+          identityStrategy: "IP_ADDRESS"
+
+      - pathPattern: "/api/v1/**"
+        priority: 2
+        policy:
+          limit: 6500
+          window: "PT1M"
+          algorithmKey: "TOKEN_BUCKET"
+          identityStrategy: "IP_ADDRESS"

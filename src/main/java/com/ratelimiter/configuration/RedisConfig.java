@@ -17,28 +17,47 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
 public class RedisConfig {
-    @Value("${spring.data.redis.host}")
+    @Value("${spring.data.redis.host:localhost}")
     private String redisHost;
 
-    @Value("${spring.data.redis.port}")
+    @Value("${spring.data.redis.port:6379}")
     private int redisPort;
+
+    @Value("${spring.data.redis.lettuce.pool.max-total:100}")
+    private int maxTotal;
+
+    @Value("${spring.data.redis.lettuce.pool.max-idle:50}")
+    private int maxIdle;
+
+    @Value("${spring.data.redis.lettuce.pool.min-idle:10}")
+    private int minIdle;
+
+    @Value("${spring.data.redis.lettuce.pool.max-wait-millis:2000}")
+    private long maxWaitMillis;
 
     @Bean
     public LettuceConnectionFactory redisStandAloneConnectionFactory() {
         GenericObjectPoolConfig<StatefulConnection<?, ?>> poolConfig = new GenericObjectPoolConfig<>();
-        poolConfig.setMaxTotal(100);
-        poolConfig.setMaxIdle(50);
-        poolConfig.setMinIdle(10);
+        poolConfig.setMaxTotal(maxTotal);
+        poolConfig.setMaxIdle(maxIdle);
+        poolConfig.setMinIdle(minIdle);
+        poolConfig.setMaxWait(Duration.ofMillis(maxWaitMillis));
         LettucePoolingClientConfiguration clientConfig = LettucePoolingClientConfiguration.builder()
                 .poolConfig(poolConfig)
+                .commandTimeout(Duration.ofMillis(2000))
                 .build();
 
-        return new LettuceConnectionFactory(new RedisStandaloneConfiguration(redisHost, redisPort), clientConfig);
+        LettuceConnectionFactory factory = new LettuceConnectionFactory(
+                new RedisStandaloneConfiguration(redisHost, redisPort), clientConfig);
+        factory.setShareNativeConnection(true);
+
+        return factory;
     }
 
     @Bean
