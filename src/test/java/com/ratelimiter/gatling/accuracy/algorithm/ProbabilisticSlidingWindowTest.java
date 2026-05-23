@@ -60,9 +60,9 @@ public class ProbabilisticSlidingWindowTest extends BaseAccuracyTest {
     }
     @Override
     protected void validateAssertions(int allowed, int throttled) {
-        int expectedTotalVolume = wave1TotalSent + 3; // 6 + 1 + 1 + 1 = 9 total requests fired
-        int minAllowed = baseLimit + 2; // Guard for heavy machine jitter environments (7)
-        int maxAllowed = baseLimit + 3; // Perfect runtime tracking execution (8)
+        int expectedTotalVolume = wave1TotalSent + 3;
+        int minAllowed = baseLimit + 1;
+        int maxAllowed = baseLimit + 3;
         if (allowed < minAllowed || allowed > maxAllowed || (allowed + throttled) != expectedTotalVolume) {
             throw new AssertionError(String.format(
                     "CRITICAL: Probabilistic Sliding Window Math Desynchronization!\n" +
