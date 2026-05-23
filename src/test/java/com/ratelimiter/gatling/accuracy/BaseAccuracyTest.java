@@ -128,6 +128,30 @@ public abstract class BaseAccuracyTest extends Simulation {
     private static String requestName(Session session) {
         return "STATUS-" + (session.contains("httpStatus") ? session.getInt("httpStatus") : "UNKNOWN");
     }
+
+    protected ScenarioBuilder createSmartDistributionScenario(String scenarioName, Iterator<Map<String, Object>> identityFeeder) {
+        List<EndpointRule> rules = loadEnpointAndItsLimitFromCSV();
+        List<Choice.WithWeight> dynamicTrafficDistribution = new ArrayList<>();
+        double totalLimitSum = 0;
+        for (EndpointRule rule : rules) {
+            totalLimitSum += rule.limit();
+        }
+        for (EndpointRule rule : rules) {
+            ChainBuilder endpointStep = exec(session -> session.set("resolvedMethod", rule.method().toUpperCase()))
+                    .doSwitch("#{resolvedMethod}").on(
+                            Choice.withKey("GET",    exec(buildRequest(http("GET: " + rule.endpoint()).get(rule.endpoint())))),
+                            Choice.withKey("POST",   exec(buildRequest(http("POST: " + rule.endpoint()).post(rule.endpoint())))),
+                            Choice.withKey("PUT",    exec(buildRequest(http("PUT: " + rule.endpoint()).put(rule.endpoint())))),
+                            Choice.withKey("DELETE", exec(buildRequest(http("DELETE: " + rule.endpoint()).delete(rule.endpoint()))))
+                    );
+            double proportionalPercentage = (rule.limit() / totalLimitSum) * 100.0;
+            dynamicTrafficDistribution.add(Choice.withWeight(proportionalPercentage, endpointStep));
+        }
+
+        return scenario(scenarioName)
+                .feed(identityFeeder)
+                .randomSwitch().on(dynamicTrafficDistribution.toArray(new Choice.WithWeight[0]));
+    }
     @Override
     public void after() {
         int allowed = COUNT_200.get();

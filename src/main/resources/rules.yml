@@ -203,3 +203,11 @@ clients:
           window: "PT1M"
           algorithmKey: "TOKEN_BUCKET"
           identityStrategy: "IP_ADDRESS"
+
+      - pathPattern: "/api/v1/**"
+        priority: 2
+        policy:
+          limit: 6500
+          window: "PT1M"
+          algorithmKey: "TOKEN_BUCKET"
+          identityStrategy: "IP_ADDRESS"
