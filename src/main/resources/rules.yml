@@ -20,8 +20,8 @@ clients:
       - pathPattern: "/api/v1/sliding-window-log-test"
         priority: 100
         policy:
-          limit: 10
-          window: "PT5S"
+          limit: 1000
+          window: "PT10S"
           algorithmKey: "SLIDING_WINDOW_LOG"
           identityStrategy: "AUTH_TOKEN"
 
@@ -29,7 +29,7 @@ clients:
         priority: 100
         policy:
           limit: 10
-          window: "PT5s"
+          window: "PT1s"
           algorithmKey: "PROBABILISTIC_SLIDING_WINDOW"
           identityStrategy: "AUTH_TOKEN"
 

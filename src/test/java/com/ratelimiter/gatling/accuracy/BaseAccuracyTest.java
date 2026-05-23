@@ -29,8 +29,10 @@ public abstract class BaseAccuracyTest extends Simulation {
     protected final HttpProtocolBuilder httpProtocol = http
             .baseUrl(baseUrl)
             .acceptHeader("application/json")
+            .maxConnectionsPerHost(60000)
             .contentTypeHeader("application/json")
             .shareConnections();
+
 
     // We have to pass same token and ip so that a particular bucket is tested
     protected final Iterator<Map<String, Object>> singleIdentityFeeder =
