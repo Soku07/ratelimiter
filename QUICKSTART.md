@@ -14,12 +14,6 @@ cd rate-limiter
 No setup needed. Caffeine runs in-process.
 
 
-Run the application:
-
-```bash
-./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-```
-
 ---
 
 **Option B — Redis**
@@ -42,8 +36,14 @@ Set the storage type in `application-dev.properties`:
 ```properties
 ratelimiter.storage.type=redis
 ```
+### 3. Start the application
 
-### 3. Verify it is running
+```bash
+bash mvnw spring-boot:run
+```
+Or you can simply use IntelliJ IDE's start button
+
+### 4. Verify it is running
 
 ```bash
 curl -i http://localhost:8080/api/actuator/health

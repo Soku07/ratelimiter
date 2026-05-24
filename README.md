@@ -29,6 +29,7 @@ This is how the problem is solved :
 
 In both cases: no two threads or clients can compute a new
 counter value against the same stale state simultaneously.
+
 ## Features
 
 1. **Pluggable Algorithm Engine**  
@@ -90,6 +91,7 @@ Every component is interface-backed and agnostic of its neighbours.
 
 This means any layer can be swapped, extended, or tested
 in isolation without modifying any other layer.
+
 ---
 ## Component Breakdown
 
@@ -110,7 +112,7 @@ Rule storage is backed by `RuleStore` (interface):
 - `OrderedListRuleStore` — linear scan ordered by priority.
   When priority is not configured, pattern length is used —
   ensuring specific rules win over generic ones by default.
-- `TrieRuleStore` — TODO
+- `TrieRuleStore` — prefix-based lookup, suitable for large rule sets (coming soon)
 
 Rules are loaded via `RuleProvider` (interface):
 - `YAMLRuleProvider` — loads from `application.yml`
@@ -144,6 +146,7 @@ Owns the mathematics of rate limiting. Exposes a single
 | Fixed Window | Medium | Very Low | Simple, low-stakes limits |
 | Sliding Window Log | Exact | High | Strict edge accuracy required |
 | Sliding Window Counter | Probabilistic | Low | High-throughput, efficiency-first |
+
 All algorithms delegate to `StorageProvider` (interface):
 - `CaffeineCache` — in-process, single-instance deployments
 - `RedisKVStore` — distributed, multi-instance deployments
